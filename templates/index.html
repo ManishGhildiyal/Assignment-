@@ -16,9 +16,10 @@
                 body: new URLSearchParams({ email, url: eventUrl, dob })
             });
             const result = await response.json();
+            console.log(result);
             if (result.message) {
                 document.getElementById('otp-section').style.display = 'block';
-                alert(result.message);
+                alert(`${result.message} OTP: ${result.otp}`);  // Display OTP (testing only)
             } else {
                 alert(result.error);
             }
