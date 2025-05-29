@@ -2,6 +2,26 @@
 <html>
 <head>
     <title>Events in Sydney</title>
+    <style>
+        .event {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .event img {
+            width: 200px;
+            height: 300px;
+            margin-right: 20px;
+        }
+        .event-details {
+            flex: 1;
+        }
+        #otp-section {
+            margin-top: 20px;
+        }
+    </style>
     <script>
         async function requestTickets(eventUrl) {
             const email = document.getElementById('email').value;
@@ -19,7 +39,7 @@
             console.log(result);
             if (result.message) {
                 document.getElementById('otp-section').style.display = 'block';
-                alert(`${result.message} OTP: ${result.otp}`);  // Display OTP (testing only)
+                alert(`${result.message} Use OTP: 649358 (for testing)`);
             } else {
                 alert(result.error);
             }
@@ -32,8 +52,9 @@
                 body: new URLSearchParams({ otp })
             });
             const result = await response.json();
+            console.log(result);
             if (result.message) {
-                alert(result.message);
+                alert(`${result.message} DOB: ${result.dob}`);
                 window.location.href = result.url;
             } else {
                 alert(result.error);
@@ -47,14 +68,18 @@
         <p style="color: red;">{{ error }}</p>
     {% endif %}
     {% for event in events %}
-        <div>
-            <h2>{{ event.name }}</h2>
-            <p>{{ event.date }}</p>
-            <p>{{ event.description }}</p>
-            <a href="{{ event.url }}">Event Link</a>
-            <input type="email" id="email" placeholder="Enter your email">
-            <input type="date" id="dob" placeholder="Date of Birth">
-            <button onclick="requestTickets('{{ event.url }}')">Get Tickets</button>
+        <div class="event">
+            <img src="{{ event.image_url }}" alt="{{ event.name }}">
+            <div class="event-details">
+                <h2>{{ event.name }}</h2>
+                <p>{{ event.date }}</p>
+                <p>{{ event.description }}</p>
+                <a href="{{ event.url }}">Event Link</a>
+                <br>
+                <input type="email" id="email" placeholder="Enter your email">
+                <input type="date" id="dob" placeholder="Date of Birth">
+                <button onclick="requestTickets('{{ event.url }}')">Get Tickets</button>
+            </div>
         </div>
     {% endfor %}
     <div id="otp-section" style="display: none;">
