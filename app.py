@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.sql import text
 import logging
 from flask_migrate import Migrate
 
@@ -134,13 +135,16 @@ def get_tickets():
         flash(f'Failed to process ticket request: {str(e)}', 'error')
         return redirect(url_for('index'))
 
-# Log migration status on startup
-with app.app_context():
+def check_migration_status():
     try:
-        db.session.execute('SELECT * FROM alembic_version')
-        app.logger.info("Alembic version table exists, migrations are set up.")
-    except (OperationalError, ProgrammingError):
-        app.logger.warning("Alembic version table not found. Ensure migrations are applied with 'flask db upgrade'.")
+        with app.app_context():
+            db.session.execute(text('SELECT * FROM alembic_version'))
+            app.logger.info("Alembic version table exists, migrations are set up.")
+    except (OperationalError, ProgrammingError) as e:
+        app.logger.warning(f"Migration check failed: {str(e)}. Ensure migrations are applied with 'flask db upgrade'.")
+
+# Run migration check after app initialization
+check_migration_status()
 
 if __name__ == '__main__':
     app.run(debug=True)
