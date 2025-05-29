@@ -50,7 +50,7 @@ def index():
         return render_template('index.html', events=events)
     except (OperationalError, ProgrammingError) as e:
         app.logger.error(f"Database error in index: {str(e)}")
-        return render_template('index.html', events=[], error="Error loading events. Please try again later.")
+        return render_template('index.html', events=[], error="Unable to load events due to a database issue. Please try again later.")
 
 @app.route('/api/events')
 def get_events():
@@ -133,6 +133,14 @@ def get_tickets():
         app.logger.error(f"Ticket request error: {str(e)}")
         flash(f'Failed to process ticket request: {str(e)}', 'error')
         return redirect(url_for('index'))
+
+# Log migration status on startup
+with app.app_context():
+    try:
+        db.session.execute('SELECT * FROM alembic_version')
+        app.logger.info("Alembic version table exists, migrations are set up.")
+    except (OperationalError, ProgrammingError):
+        app.logger.warning("Alembic version table not found. Ensure migrations are applied with 'flask db upgrade'.")
 
 if __name__ == '__main__':
     app.run(debug=True)
