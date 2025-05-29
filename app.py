@@ -25,6 +25,7 @@ class Event(db.Model):
     date = db.Column(db.String(120), nullable=False)
     description = db.Column(db.String(200), nullable=False)
     url = db.Column(db.String(200), nullable=False)
+    image_url = db.Column(db.String(200), nullable=True)  # New column for event image
 
 class TicketRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,13 +35,17 @@ class TicketRequest(db.Model):
     otp = db.Column(db.String(6), nullable=True)
     verified = db.Column(db.Boolean, default=False)
 
-def generate_otp(length=6):
-    return ''.join(random.choices(string.digits, k=length))
+FIXED_OTP = "649358"  # Fixed OTP
 
 @app.route('/')
 def index():
     try:
         events = Event.query.all()
+        # Add placeholder image_url if not present
+        for event in events:
+            if not event.image_url:
+                event.image_url = f"https://picsum.photos/200/300?random={event.id}"
+        db.session.commit()
         return render_template('index.html', events=events)
     except OperationalError as e:
         app.logger.error(f"Database error in index: {str(e)}")
@@ -63,7 +68,17 @@ def create_tables():
 def get_events():
     try:
         events = Event.query.all()
-        return jsonify([{'name': event.name, 'date': event.date, 'description': event.description, 'url': event.url} for event in events])
+        for event in events:
+            if not event.image_url:
+                event.image_url = f"https://picsum.photos/200/300?random={event.id}"
+        db.session.commit()
+        return jsonify([{
+            'name': event.name,
+            'date': event.date,
+            'description': event.description,
+            'url': event.url,
+            'image_url': event.image_url
+        } for event in events])
     except OperationalError as e:
         app.logger.error(f"Database error in get_events: {str(e)}")
         return jsonify({'error': 'Database error occurred'}), 500
@@ -82,14 +97,13 @@ def get_tickets():
         except ValueError as e:
             app.logger.error(f"DOB parsing error: {str(e)}")
             return jsonify({'error': 'Invalid DOB format (use YYYY-MM-DD)'}), 400
-        otp = generate_otp()
-        ticket_request = TicketRequest(email=email, event_url=event_url, dob=dob_date, otp=otp, verified=False)
+        ticket_request = TicketRequest(email=email, event_url=event_url, dob=dob_date, otp=FIXED_OTP, verified=False)
         db.session.add(ticket_request)
         db.session.commit()
-        app.logger.info(f"Ticket request saved: ID={ticket_request.id}, OTP={otp}")
+        app.logger.info(f"Ticket request saved: ID={ticket_request.id}, OTP={FIXED_OTP}")
         session['ticket_id'] = ticket_request.id
-        # Return OTP in response for testing (in production, use email)
-        return jsonify({'message': 'OTP generated. Enter it to verify.', 'otp': otp})  # Remove 'otp' in production
+        session['user_email'] = email  # Store email in session
+        return jsonify({'message': 'Enter the OTP to verify.'})
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Ticket request error: {str(e)}")
@@ -100,19 +114,25 @@ def verify_otp():
     try:
         otp = request.form.get('otp')
         ticket_id = session.get('ticket_id')
-        app.logger.debug(f"Verifying OTP: otp={otp}, ticket_id={ticket_id}")
+        user_email = session.get('user_email')  # Retrieve email from session
+        app.logger.debug(f"Verifying OTP: otp={otp}, ticket_id={ticket_id}, email={user_email}")
         if not ticket_id or not otp:
             return jsonify({'error': 'OTP and ticket ID are required'}), 400
         ticket_request = TicketRequest.query.get(ticket_id)
         if not ticket_request:
             return jsonify({'error': 'Invalid ticket request'}), 404
-        if ticket_request.otp == otp:
+        if otp == FIXED_OTP:
             ticket_request.verified = True
             db.session.commit()
-            app.logger.info(f"OTP verified for ticket ID={ticket_id}")
-            return jsonify({'message': 'OTP verified! You will be redirected.', 'url': ticket_request.event_url})
+            app.logger.info(f"OTP verified for ticket ID={ticket_id}, email={user_email}, DOB={ticket_request.dob}")
+            return jsonify({
+                'message': f'OTP verified for {user_email}! You will be redirected.',
+                'url': ticket_request.event_url,
+                'dob': ticket_request.dob.strftime('%Y-%m-%d')
+            })
         else:
-            return jsonify({'error': 'Invalid OTP'}), 400
+            app.logger.warning(f"Wrong OTP entered: {otp}")
+            return jsonify({'error': 'Wrong OTP'}), 400
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"OTP verification error: {str(e)}")
