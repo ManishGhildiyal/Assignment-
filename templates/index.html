@@ -68,19 +68,34 @@
         <p style="color: red;">{{ error }}</p>
     {% endif %}
     {% for event in events %}
-        <div class="event">
-            <img src="{{ event.image_url }}" alt="{{ event.name }}">
-            <div class="event-details">
-                <h2>{{ event.name }}</h2>
-                <p>{{ event.date }}</p>
-                <p>{{ event.description }}</p>
-                <a href="{{ event.url }}">Event Link</a>
-                <br>
-                <input type="email" id="email" placeholder="Enter your email">
-                <input type="date" id="dob" placeholder="Date of Birth">
-                <button onclick="requestTickets('{{ event.url }}')">Get Tickets</button>
+        {% if loop.first %}
+            <div class="event">
+                <img src="{{ event.image_url }}" alt="{{ event.name }}">
+                <div class="event-details">
+                    <h2>{{ event.name }}</h2>
+                    <p>{{ event.date }}</p>
+                    <p>{{ event.description }}</p>
+                    <a href="{{ event.url }}">Event Link</a>
+                    <br>
+                    <input type="email" id="email" placeholder="Enter your email">
+                    <input type="date" id="dob" placeholder="Date of Birth">
+                    <button onclick="requestTickets('{{ event.url }}')">Get Tickets</button>
+                </div>
             </div>
-        </div>
+        {% else %}
+            <div class="event">
+                <div class="event-details">
+                    <h2>{{ event.name }}</h2>
+                    <p>{{ event.date }}</p>
+                    <p>{{ event.description }}</p>
+                    <a href="{{ event.url }}">Event Link</a>
+                    <br>
+                    <input type="email" id="email" placeholder="Enter your email">
+                    <input type="date" id="dob" placeholder="Date of Birth">
+                    <button onclick="requestTickets('{{ event.url }}')">Get Tickets</button>
+                </div>
+            </div>
+        {% endif %}
     {% endfor %}
     <div id="otp-section" style="display: none;">
         <input type="text" id="otp" placeholder="Enter OTP">
