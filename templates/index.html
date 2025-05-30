@@ -21,9 +21,9 @@
         {% endwith %}
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {% for event in events if event.image_url %}
+            {% for event in events %}
                 <div class="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transform hover:scale-105 transition duration-300 max-w-sm mx-auto">
-                    <img src="{{ event.image_url }}" alt="{{ event.name }}" class="w-48 h-48 object-contain rounded-lg mx-auto aspect-square">
+                    <img src="{{ event.image_url or 'https://picsum.photos/200/200?random=' + event.id|string }}" alt="{{ event.name }}" class="w-48 h-48 object-contain rounded-lg mx-auto aspect-square">
                     <div class="space-y-2 mt-4">
                         <h2 class="text-2xl font-extrabold text-gray-900">{{ event.name }}</h2>
                         <p class="text-gray-500 text-sm">Date: {{ event.date }}</p>
