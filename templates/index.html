@@ -4,76 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Events in Sydney</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <style>
-        .event-card {
-            margin-bottom: 1.5rem;
-        }
-        .card-img-top {
-            height: 200px;
-            object-fit: cover;
-        }
-        .otp-field {
-            display: none;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <h1 class="text-center mb-4">Events in Sydney</h1>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-4xl font-extrabold mb-8 text-center text-gray-800">Events in Sydney</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'info' if category == 'info' else 'danger' }}" role="alert">
+                    <div class="bg-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'blue' }}-100 border-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'blue' }}-400 text-{{ 'green' if category == 'success' else 'red' if category == 'error' else 'blue' }}-700 px-4 py-3 rounded relative mb-4" role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <div class="row">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {% for event in events %}
-                <div class="col-md-4">
-                    <div class="card event-card">
-                        <img src="{{ event.display_image_url }}" alt="{{ event.name }} image" class="card-img-top">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ event.name }}</h5>
-                            <p class="card-text"><strong>Date:</strong> {{ event.date }}</p>
-                            <p class="card-text">{{ event.description }}</p>
-                            <a href="{{ event.url }}" class="btn btn-primary mb-2">Event Link</a>
-                            <form action="{{ url_for('get_tickets') }}" method="POST" class="ticket-form">
-                                <input type="hidden" name="url" value="{{ event.url }}">
-                                <div class="mb-3">
-                                    <input type="email" name="email" class="form-control" placeholder="Enter your email"
-                                        {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}disabled{% endif %} required>
+                <div class="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transform hover:scale-105 transition duration-300 max-w-sm mx-auto">
+                    <img src="{{ event.image_url or 'https://picsum.photos/200/200?random=' + event.id|string }}" alt="{{ event.name }}" class="w-48 h-48 object-contain rounded-lg mx-auto aspect-square">
+                    <div class="space-y-2 mt-4">
+                        <h2 class="text-2xl font-extrabold text-gray-900">{{ event.name }}</h2>
+                        <p class="text-gray-500 text-sm">Date: {{ event.date }}</p>
+                        <p class="text-gray-600">{{ event.description }}</p>
+                        <form action="{{ url_for('get_tickets') }}" method="post" class="mt-6">
+                            <input type="hidden" name="url" value="{{ event.url }}">
+                            <div class="mb-4">
+                                <label for="email-{{ event.id }}" class="block text-gray-700 font-medium">Email:</label>
+                                <input type="email" name="email" id="email-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="dob-{{ event.id }}" class="block text-gray-700 font-medium">Date of Birth:</label>
+                                <input type="date" name="dob" id="dob-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}
+                                <div class="mb-4">
+                                    <label for="otp-{{ event.id }}" class="block text-gray-700 font-medium">OTP:</label>
+                                    <input type="text" name="otp" id="otp-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                                 </div>
-                                <div class="mb-3">
-                                    <input type="date" name="dob" class="form-control"
-                                        {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}disabled{% endif %} required>
-                                </div>
-                                <div class="mb-3 otp-field"
-                                    {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}style="display: block;"{% endif %}>
-                                    <input type="text" name="otp" class="form-control" placeholder="Enter OTP"
-                                        {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}required{% endif %}>
-                                </div>
-                                <button type="submit" class="btn btn-success ticket-btn">
-                                    {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}
-                                        Verify OTP
-                                    {% else %}
-                                        Get Tickets
-                                    {% endif %}
-                                </button>
-                            </form>
-                        </div>
+                            {% endif %}
+                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                                {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}
+                                    Verify OTP
+                                {% else %}
+                                    Get Tickets
+                                {% endif %}
+                            </button>
+                        </form>
                     </div>
                 </div>
             {% endfor %}
         </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
