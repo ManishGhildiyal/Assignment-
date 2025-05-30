@@ -3,19 +3,15 @@ import random
 import string
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
-import random
-import string
-from datetime import datetime
-from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.sql import text
 import logging
 from flask_migrate import Migrate
 
-app = Flask(__name__)
+app = Flask(_name_)
 app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(os.path.dirname(__file__), 'events.db'))
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(os.path.dirname(_file_), 'events.db'))
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1) + '?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -36,7 +32,10 @@ class Event(db.Model):
 
     @property
     def display_image_url(self):
-        return self.image_url or f"https://picsum.photos/200/300?random={self.id}"
+        if self.image_url:
+            return self.image_url
+        app.logger.info(f"Using placeholder image for event ID={self.id}, name={self.name}")
+        return f"https://picsum.photos/200/200?random={self.id}"
 
 class TicketRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -136,7 +135,7 @@ def get_tickets():
         app.logger.error(f"Ticket request error: {str(e)}")
         flash(f'Failed to process ticket request: {str(e)}', 'error')
         return redirect(url_for('index'))
-        
+
 def check_migration_status():
     try:
         with app.app_context():
@@ -148,5 +147,5 @@ def check_migration_status():
 # Run migration check after app initialization
 check_migration_status()
 
-if __name__ == '__main__':
+if _name_ == '_main_':
     app.run(debug=True)
