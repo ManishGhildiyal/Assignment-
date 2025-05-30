@@ -32,16 +32,26 @@
                             <input type="hidden" name="url" value="{{ event.url }}">
                             <div class="mb-4">
                                 <label for="email-{{ event.id }}" class="block text-gray-700 font-medium">Email:</label>
-                                <input type="email" name="email" id="email-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <input type="email" name="email" id="email-{{ event.id }}" 
+                                       class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                       value="{{ session.get('user_email', '') }}"
+                                       {% if request.args.get('ticket_id') and event.url == session.get('event_url') %} readonly {% endif %}
+                                       required>
                             </div>
                             <div class="mb-4">
                                 <label for="dob-{{ event.id }}" class="block text-gray-700 font-medium">Date of Birth:</label>
-                                <input type="date" name="dob" id="dob-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <input type="date" name="dob" id="dob-{{ event.id }}" 
+                                       class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                       value="{{ session.get('dob', '') }}"
+                                       {% if request.args.get('ticket_id') and event.url == session.get('event_url') %} readonly {% endif %}
+                                       required>
                             </div>
                             {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}
                                 <div class="mb-4">
                                     <label for="otp-{{ event.id }}" class="block text-gray-700 font-medium">OTP:</label>
-                                    <input type="text" name="otp" id="otp-{{ event.id }}" class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <input type="text" name="otp" id="otp-{{ event.id }}" 
+                                           class="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                           required>
                                 </div>
                             {% endif %}
                             <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
