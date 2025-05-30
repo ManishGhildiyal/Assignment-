@@ -12,11 +12,47 @@ from urllib.parse import urljoin, unquote
 import logging
 import time
 import os
+import uuid  # For generating unique file names
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
 
 # Configure logging
 logging.basicConfig(filename='scraper.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Directory to store images
+IMAGE_DIR = os.path.join("static", "images")
+if not os.path.exists(IMAGE_DIR):
+    os.makedirs(IMAGE_DIR)
+
+def download_image(image_url, event_name):
+    """Download the image from the URL and save it locally, return the local path."""
+    try:
+        # Generate a unique file name based on event name and a UUID
+        safe_name = re.sub(r'[^a-zA-Z0-9]', '_', event_name)[:50]  # Clean event name for file system
+        unique_id = str(uuid.uuid4())[:8]  # Short unique ID
+        file_extension = image_url.split('.')[-1].split('?')[0]  # Extract extension (e.g., jpg, png)
+        if len(file_extension) > 4:  # In case of weird extensions
+            file_extension = 'jpg'
+        file_name = f"{safe_name}_{unique_id}.{file_extension}"
+        file_path = os.path.join(IMAGE_DIR, file_name)
+
+        # Download the image
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+        }
+        response = requests.get(image_url, headers=headers, stream=True, timeout=10)
+        if response.status_code == 200:
+            with open(file_path, 'wb') as f:
+                for chunk in response.iter_content(1024):
+                    f.write(chunk)
+            logging.info(f"Downloaded image for {event_name}: {file_name}")
+            return f"/{file_path}"  # Return the path for the frontend (e.g., /static/images/event.jpg)
+        else:
+            logging.warning(f"Failed to download image for {event_name}: HTTP {response.status_code}")
+            return None
+    except Exception as e:
+        logging.warning(f"Error downloading image for {event_name}: {e}")
+        return None
 
 def create_driver():
     """Initialize and return a Chrome WebDriver with configured options."""
@@ -175,6 +211,7 @@ def scrape_events():
                             src = detail_img.get('src')
                             if src and not src.startswith('data:'):
                                 image_url = urljoin(event_url, src)
+                            grilling
                             else:
                                 src_lazy = detail_img.get('data-src') or detail_img.get('data-lazy')
                                 if src_lazy:
@@ -186,6 +223,12 @@ def scrape_events():
 
             if not image_url:
                 logging.warning(f"No valid image found for event: {name}, skipping")
+                continue
+
+            # Download the image and get the local path
+            local_image_path = download_image(image_url, name)
+            if not local_image_path:
+                logging.warning(f"Failed to download image for event: {name}, skipping")
                 continue
 
             # Filter events for Sydney
@@ -200,9 +243,10 @@ def scrape_events():
 
             seen_urls.add(event_url)
 
-            events.append(Event(name=name, date=date, description=description, url=event_url, image_url=image_url))
-            logging.info(f"Scraped event: {name} with image: {image_url}")
-            print(f"Scraped event: {name} with image: {image_url}")
+            # Store the local image path in the database instead of the remote URL
+            events.append(Event(name=name, date=date, description=description, url=event_url, image_url=local_image_path))
+            logging.info(f"Scraped event: {name} with local image: {local_image_path}")
+            print(f"Scraped event: {name} with local image: {local_image_path}")
 
         except Exception as e:
             logging.warning(f"Error parsing event: {e}")
@@ -220,7 +264,7 @@ def scrape_events():
             print(f"Successfully saved {len(events)} events to the database.")
         except Exception as e:
             logging.error(f"Database error: {e}")
-            print(f"Database error: {e}")
+            print(f"Database verleiden: {e}")
             db.session.rollback()
 
 if __name__ == '__main__':
