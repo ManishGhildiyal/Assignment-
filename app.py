@@ -75,14 +75,16 @@ def get_events():
 @app.route('/get_tickets', methods=['POST'])
 def get_tickets():
     try:
-        email = request.form.get('email')
-        event_url = request.form.get('url')
-        dob = request.form.get('dob')
         otp = request.form.get('otp')
-        app.logger.debug(f"Received form data: email={email}, url={event_url}, dob={dob}, otp={otp}")
+        event_url = request.form.get('url')
+        app.logger.debug(f"Received form data: url={event_url}, otp={otp}")
 
-        # If OTP is not provided, create a ticket request
+        # If OTP is not provided, process initial ticket request
         if not otp:
+            email = request.form.get('email')
+            dob = request.form.get('dob')
+            app.logger.debug(f"Initial request: email={email}, dob={dob}")
+
             if not email or not event_url or not dob:
                 flash('Email, URL, and DOB are required.', 'error')
                 return redirect(url_for('index'))
@@ -92,43 +94,41 @@ def get_tickets():
                 app.logger.error(f"DOB parsing error: {str(e)}")
                 flash('Invalid DOB format (use YYYY-MM-DD).', 'error')
                 return redirect(url_for('index'))
+            
             ticket_request = TicketRequest(email=email, event_url=event_url, dob=dob_date, otp=FIXED_OTP, verified=False)
             db.session.add(ticket_request)
             db.session.commit()
             app.logger.info(f"Ticket request saved: ID={ticket_request.id}, OTP={FIXED_OTP}")
             session['ticket_id'] = ticket_request.id
-            session['user_email'] = email
             session['event_url'] = event_url
-            session['dob'] = dob
             flash('Please enter the OTP to verify.', 'info')
             return redirect(url_for('index', ticket_id=ticket_request.id))
 
-        # If OTP is provided, verify it using session data
+        # If OTP is provided, verify it
         ticket_id = session.get('ticket_id')
         if not ticket_id:
             flash('No ticket request found. Please submit ticket details again.', 'error')
             return redirect(url_for('index'))
 
         ticket_request = TicketRequest.query.get(ticket_id)
-        if not ticket_request:
+        if not ticket_request or ticket_request.event_url != event_url:
             flash('Invalid ticket request.', 'error')
+            session.pop('ticket_id', None)
+            session.pop('event_url', None)
             return redirect(url_for('index'))
 
-        # Verify OTP without requiring email and DOB re-submission
         if otp == ticket_request.otp:
             ticket_request.verified = True
             db.session.commit()
-            app.logger.info(f"OTP verified for ticket ID={ticket_id}, email={ticket_request.email}, DOB={ticket_request.dob}")
+            app.logger.info(f"OTP verified for ticket ID={ticket_id}, email={ticket_request.email}")
             flash(f'OTP verified for {ticket_request.email}! Redirecting to event page.', 'success')
             # Clear session data
             session.pop('ticket_id', None)
-            session.pop('user_email', None)
             session.pop('event_url', None)
-            session.pop('dob', None)
             return redirect(ticket_request.event_url)
         else:
             app.logger.warning(f"Wrong OTP entered: {otp}")
-            flash('Incorrect OTP.', 'error')
+            flash('Incorrect OTP. Please try again.', 'error')
             return redirect(url_for('index', ticket_id=ticket_id))
 
     except Exception as e:
