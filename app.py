@@ -9,7 +9,7 @@ from sqlalchemy.sql import text
 import logging
 from flask_migrate import Migrate
 
-app = Flask(__name__)  # Corrected from _name_ to __name__
+app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'fallback-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(os.path.dirname(__file__), 'events.db'))
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
@@ -32,7 +32,7 @@ class Event(db.Model):
 
     @property
     def display_image_url(self):
-        return self.image_url or f"https://picsum.photos/200/300?random={self.id}"
+        return self.image_url  # Remove picsum.photos fallback
 
 class TicketRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
