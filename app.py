@@ -105,10 +105,7 @@ def get_tickets():
 
         # If OTP is provided, verify it using session data
         ticket_id = session.get('ticket_id')
-        user_email = session.get('user_email')
-        event_url = session.get('event_url')
-        dob = session.get('dob')
-        if not ticket_id or not user_email or not event_url or not dob:
+        if not ticket_id:
             flash('No ticket request found. Please submit ticket details again.', 'error')
             return redirect(url_for('index'))
 
@@ -117,11 +114,12 @@ def get_tickets():
             flash('Invalid ticket request.', 'error')
             return redirect(url_for('index'))
 
-        if otp == FIXED_OTP:
+        # Verify OTP without requiring email and DOB re-submission
+        if otp == ticket_request.otp:
             ticket_request.verified = True
             db.session.commit()
-            app.logger.info(f"OTP verified for ticket ID={ticket_id}, email={user_email}, DOB={ticket_request.dob}")
-            flash(f'OTP verified for {user_email}! Redirecting to event page.', 'success')
+            app.logger.info(f"OTP verified for ticket ID={ticket_id}, email={ticket_request.email}, DOB={ticket_request.dob}")
+            flash(f'OTP verified for {ticket_request.email}! Redirecting to event page.', 'success')
             # Clear session data
             session.pop('ticket_id', None)
             session.pop('user_email', None)
@@ -138,7 +136,7 @@ def get_tickets():
         app.logger.error(f"Ticket request error: {str(e)}")
         flash(f'Failed to process ticket request: {str(e)}', 'error')
         return redirect(url_for('index'))
-
+        
 def check_migration_status():
     try:
         with app.app_context():
