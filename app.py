@@ -3,6 +3,10 @@ import random
 import string
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
+import random
+import string
+from datetime import datetime
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.sql import text
@@ -32,7 +36,7 @@ class Event(db.Model):
 
     @property
     def display_image_url(self):
-        return self.image_url  # Remove picsum.photos fallback
+        return self.image_url or f"https://picsum.photos/200/300?random={self.id}"
 
 class TicketRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
