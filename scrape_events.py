@@ -58,6 +58,9 @@ def scrape_events():
             description = desc_elem.text.strip()[:200] if desc_elem else name
             url_elem = event_div.select_one('a[href]')
             event_url = urljoin(url, url_elem['href'])[:200] if url_elem and url_elem.get('href') else url
+            # Extract image URL
+            img_elem = event_div.select_one('img')
+            image_url = urljoin(url, img_elem['src'])[:200] if img_elem and img_elem.get('src') else None
             if "Sydney" not in name and "Sydney" not in description:
                 logging.info(f"Skipping non-Sydney event: {name}")
                 continue
@@ -65,9 +68,9 @@ def scrape_events():
                 logging.info(f"Skipping duplicate event: {name}")
                 continue
             seen_urls.add(event_url)
-            events.append(Event(name=name, date=date, description=description, url=event_url))
-            logging.info(f"Scraped event: {name}")
-            print(f"Scraped event: {name}")
+            events.append(Event(name=name, date=date, description=description, url=event_url, image_url=image_url))
+            logging.info(f"Scraped event: {name} with image: {image_url}")
+            print(f"Scraped event: {name} with image: {image_url}")
         except AttributeError as e:
             logging.warning(f"Error parsing event: {e}")
             print(f"Error parsing event: {e}")
@@ -88,4 +91,3 @@ def scrape_events():
 
 if __name__ == '__main__':
     scrape_events()
-    
