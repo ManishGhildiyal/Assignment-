@@ -75,6 +75,10 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .message.info {
+            background-color: #cce5ff;
+            color: #004085;
+        }
     </style>
 </head>
 <body>
@@ -84,28 +88,28 @@
         {% if messages %}
             {% for category, message in messages %}
                 <div class="message {{ category }}">{{ message }}</div>
-            <% endfor %>
-        <% endif %}
-    <% endwith %>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
     <div class="events">
-        <% for event in events %>
+        {% for event in events %}
             <div class="event">
-                <img src="{{ event.image_url }}" alt="{{ event.name }}">
+                <img src="{{ event.display_image_url }}" alt="{{ event.name }}">
                 <div class="event-details">
                     <h2>{{ event.name }}</h2>
                     <p><strong>Date:</strong> {{ event.date }}</p>
                     <p>{{ event.description }}</p>
                     <a href="{{ event.url }}" target="_blank">More Info</a>
 
-                    <% if request.args.get('ticket_id') and event.url == session.get('event_url') %>
+                    {% if request.args.get('ticket_id') and event.url == session.get('event_url') %}
                         <form action="{{ url_for('verify_otp') }}" method="post">
                             <input type="hidden" name="ticket_id" value="{{ request.args.get('ticket_id') }}">
                             <label>Enter OTP:</label>
                             <input type="text" name="otp" required>
                             <button type="submit">Verify OTP</button>
                         </form>
-                    <% else %>
+                    {% else %}
                         <form action="{{ url_for('get_tickets') }}" method="post">
                             <input type="hidden" name="event_url" value="{{ event.url }}">
                             <label>Email:</label>
@@ -114,10 +118,10 @@
                             <input type="date" name="dob" required>
                             <button type="submit">Get Tickets</button>
                         </form>
-                    <% endif %>
+                    {% endif %}
                 </div>
             </div>
-        <% endfor %>
+        {% endfor %}
     </div>
 </body>
 </html>
